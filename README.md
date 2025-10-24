@@ -21,8 +21,6 @@
 
 ## 依賴的第三方函式庫 (Libraries)
 
-根據挑戰文件允許的範圍：
-
 * **H2 Database**: `2.1.214` (用於嵌入式證券資料庫)
 * **Google Guava**: `33.2.1-jre` (用於 `Strings.repeat()`)
 * **JUnit 5**: (用於單元測試)
@@ -32,7 +30,7 @@
 ## 如何建置 (How to Build)
 
 1.  開啟終端機 (Terminal)。
-2.  導航至專案的根目錄。
+2.  至專案的根目錄。
 3.  執行 Gradle 包裝器 (wrapper) 來建置專案：
 
     ```bash
@@ -49,7 +47,7 @@
 
 有兩種方式可以運行此應用程式：
 
-### 1. (推薦) 透過 IntelliJ IDEA
+### 1. 透過 IntelliJ IDEA
 
 1.  打開 `src/main/java/com/example/realtimevalsystem/MainApplication.java` 檔案。
 2.  點擊 `main` 方法旁邊的綠色「▶」播放按鈕。
@@ -57,8 +55,7 @@
 
 ### 2. 透過 Gradle
 
-1.  (若尚未設定) 請在 `build.gradle.kts` 中加入 `application` 插件並指定 `mainClass`。
-2.  在終端機中執行：
+1.  在終端機中執行：
 
     ```bash
     # (Windows)

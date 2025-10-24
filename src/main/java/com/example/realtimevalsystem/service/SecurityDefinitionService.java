@@ -11,8 +11,7 @@ import java.util.Map;
 
 public class SecurityDefinitionService {
 
-    // H2 in-memory
-    // DB_CLOSE_DELAY=-1 能確保資料庫在所有連線關閉後不會消失
+    // H2 in-memory, DB_CLOSE_DELAY=-1 能確保資料庫在所有連線關閉後不會消失
     private static final String DB_URL = "jdbc:h2:mem:security_db;DB_CLOSE_DELAY=-1";
     private static final String DB_USER = "sa";
     private static final String DB_PASSWORD = "";

@@ -3,7 +3,7 @@ package com.example.realtimevalsystem.model;
 import java.util.List;
 
 /**
- * [已升級] 代表一次完整的投資組合更新事件
+ * 代表一次完整的投資組合更新事件
  */
 public class PortfolioUpdate {
     private final long updateNumber;

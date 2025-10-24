@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * 核心估值服務
  * 1. 監聽市場價格
  * 2. 執行計算
- * 3. 將結果 "發布" 給訂閱者
+ * 3. 將結果發布給訂閱者
  */
 public class PortfolioValuationService implements MarketDataListener {
 

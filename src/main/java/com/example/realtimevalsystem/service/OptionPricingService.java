@@ -2,7 +2,7 @@ package com.example.realtimevalsystem.service;
 
 public class OptionPricingService {
 
-    // 根據挑戰文件要求，無風險利率 (r) 固定為 2%
+    // 無風險利率 (r) 固定為 2%
     private static final double RISK_FREE_RATE = 0.02;
 
     /**
@@ -51,7 +51,6 @@ public class OptionPricingService {
     /**
      * 計算標準常態分佈的累積機率函數 (CDF) - N(x)
      * 由於 JDK 1.8 限制，我們使用 Abramowitz and Stegun 的 "Formula 7.1.26" 逼近法。
-     * 這不依賴任何外部函式庫。
      */
     private double N(double z) {
         // N(z) = 0.5 * (1 + erf(z / sqrt(2)))
@@ -60,7 +59,6 @@ public class OptionPricingService {
 
     /**
      * 誤差函數 erf(x) 的高精度逼近實作 (Formula 7.1.26)
-     * 僅使用 java.lang.Math。
      */
     private double erf(double z) {
         // 逼近法所使用的常數

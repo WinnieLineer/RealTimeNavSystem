@@ -1,7 +1,7 @@
 package com.example.realtimevalsystem.model;
 
 /**
- * [已升級] 代表一個已計算完畢的持倉價值
+ *  代表一個已計算完畢的持倉價值
  */
 public class CalculatedPosition {
     private final String symbol;
