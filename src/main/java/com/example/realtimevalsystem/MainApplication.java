@@ -37,7 +37,7 @@ public class MainApplication {
             Thread marketDataThread = getThread(positions, securityMap);
             marketDataThread.start();
 
-            System.out.println("===== 系統已啟動：等待市場數據更新... =====");
+            System.out.println("========================= 系統已啟動：等待市場數據更新...  ===============================");
 
         } catch (SQLException e) {
             System.err.println("資料庫初始化失敗!");
@@ -53,33 +53,32 @@ public class MainApplication {
 
         // 設定股票的 "初始價格"
         Map<String, Double> initialStockPrices = new HashMap<>();
-        initialStockPrices.put("AAPL", 110.00); // 範例中的初始價格
+        initialStockPrices.put("AAPL", 110.00);  // 範例中的初始價格
         initialStockPrices.put("TELSA", 450.00); // 範例中的初始價格
 
-        // 建立 "大腦" 估值服務
+        // valuation engine
         PortfolioValuationService valuationService = new PortfolioValuationService(
-                positions,
-                securityMap,
-                initialStockPrices,
-                pricingService
+            positions,
+            securityMap,
+            initialStockPrices,
+            pricingService
         );
 
         // 建立 "訂閱者" (印出服務)
         ConsoleResultSubscriber subscriber = new ConsoleResultSubscriber();
-        // 將 "訂閱者" 註冊到 "大腦"
+
+        // 將 "訂閱者" 註冊到 "valuation engine"
         valuationService.setListener(subscriber);
 
-        // 建立 "心臟" 市場發布者
+        // 建立市場發布者
         MarketDataPublisher publisher = new MarketDataPublisher(
-                securityMap,
-                initialStockPrices // 傳入初始價格 Map
+            securityMap,
+            initialStockPrices
         );
 
-        // 關鍵：將 "大腦" 註冊為 "心臟" 的監聽器
         publisher.setListener(valuationService);
 
-        // --- 3. 啟動系統 -------------------------------------------------------------------------------------------
-        // 將 publisher 放到一個新線程中運行
+        // --- 3. 啟動系統 -----------------------------------------------------------------------------------------------
         Thread marketDataThread = new Thread(publisher);
         marketDataThread.setName("MarketDataThread");
         return marketDataThread;

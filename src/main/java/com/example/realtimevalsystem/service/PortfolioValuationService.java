@@ -25,7 +25,6 @@ public class PortfolioValuationService implements MarketDataListener {
     private final Map<String, Double> currentPrices = new ConcurrentHashMap<>();
     private final Map<String, Double> currentStockPrices;
 
-    // --- 新增：訂閱者 和 序號 ---
     private PortfolioResultListener resultListener;
     private final AtomicLong updateCounter = new AtomicLong(0); // 原子計數器
 
@@ -38,14 +37,12 @@ public class PortfolioValuationService implements MarketDataListener {
         this.pricingService = pricingService;
         this.currentStockPrices = new ConcurrentHashMap<>(initialStockPrices);
 
-        // (初始化價格 Map 的邏輯不變)
         for (Position p : positions) {
             String ticker = p.getSymbol();
             currentPrices.put(ticker, currentStockPrices.getOrDefault(ticker, 0.0));
         }
     }
 
-    // --- 新增：註冊訂閱者的方法 ---
     public void setListener(PortfolioResultListener listener) {
         this.resultListener = listener;
     }
@@ -56,14 +53,11 @@ public class PortfolioValuationService implements MarketDataListener {
         recalculatePortfolio(ticker, newPrice);
     }
 
-    /**
-     * 重構：只計算，不印出
-     */
     private void recalculatePortfolio(String updatedTicker, double updatedPrice) {
         double totalNAV = 0.0;
         List<CalculatedPosition> calculatedPositions = new ArrayList<>();
 
-        // --- 1. 更新價格並計算價值 ---
+        // --- 1. 更新價格並計算價值 --------------------------------------------------------------------------------------
         for (Position pos : positions) {
             String ticker = pos.getSymbol();
             Security sec = securityMap.get(ticker);
@@ -99,7 +93,7 @@ public class PortfolioValuationService implements MarketDataListener {
             calculatedPositions.add(new CalculatedPosition(ticker, typeStr, newPrice, qty, value));
         }
 
-        // --- 2. 發布結果給訂閱者 ---
+        // --- 2. 發布結果給訂閱者 ----------------------------------------------------------------------------------------
         if (resultListener != null) {
             long currentUpdateNum = updateCounter.incrementAndGet();
             PortfolioUpdate update = new PortfolioUpdate(
