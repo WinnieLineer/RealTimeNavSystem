@@ -39,7 +39,6 @@ public class PositionLoader {
                 String[] parts = line.replaceAll("\\s+", "").split(",");
                 if (parts.length == 2) {
                     String symbol = parts[0];
-                    // 移除範例中 TELSA-NOV...C 後面的空白 [cite: 44]
                     long positionSize = Long.parseLong(parts[1]);
                     positions.add(new Position(symbol, positionSize));
                 }

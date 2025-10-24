@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 核心估值服務 (已重構)
+ * 核心估值服務
  * 1. 監聽市場價格
  * 2. 執行計算
  * 3. 將結果 "發布" 給訂閱者
@@ -41,11 +41,7 @@ public class PortfolioValuationService implements MarketDataListener {
         // (初始化價格 Map 的邏輯不變)
         for (Position p : positions) {
             String ticker = p.getSymbol();
-            if (currentStockPrices.containsKey(ticker)) {
-                currentPrices.put(ticker, currentStockPrices.get(ticker));
-            } else {
-                currentPrices.put(ticker, 0.0);
-            }
+            currentPrices.put(ticker, currentStockPrices.getOrDefault(ticker, 0.0));
         }
     }
 
@@ -72,20 +68,20 @@ public class PortfolioValuationService implements MarketDataListener {
             String ticker = pos.getSymbol();
             Security sec = securityMap.get(ticker);
             double newPrice = 0.0;
-            String typeStr = "UNKNOWN"; // <-- 新增
+            String typeStr = "UNKNOWN";
 
             if (sec instanceof Stock) {
-                typeStr = "STOCK"; // <-- 新增
+                typeStr = "STOCK";
                 newPrice = currentStockPrices.getOrDefault(ticker, 0.0);
             } else if (sec instanceof EuropeanCallOption) {
-                typeStr = "CALL"; // <-- 新增
+                typeStr = "CALL";
                 EuropeanCallOption call = (EuropeanCallOption) sec;
                 double S = currentStockPrices.get(call.getUnderlyingTicker());
                 newPrice = pricingService.calculateCallPrice(
                         S, call.getStrikePrice(), call.getSigma(), call.getTimeToMaturity()
                 );
             } else if (sec instanceof EuropeanPutOption) {
-                typeStr = "PUT"; // <-- 新增
+                typeStr = "PUT";
                 EuropeanPutOption put = (EuropeanPutOption) sec;
                 double S = currentStockPrices.get(put.getUnderlyingTicker());
                 newPrice = pricingService.calculatePutPrice(
@@ -99,11 +95,11 @@ public class PortfolioValuationService implements MarketDataListener {
             double value = newPrice * qty;
             totalNAV += value;
 
-            // --- [已升級] 傳入 typeStr ---
+            // --- 傳入 typeStr ---
             calculatedPositions.add(new CalculatedPosition(ticker, typeStr, newPrice, qty, value));
         }
 
-        // --- 2. 發布結果給訂閱者 (這部分不變) ---
+        // --- 2. 發布結果給訂閱者 ---
         if (resultListener != null) {
             long currentUpdateNum = updateCounter.incrementAndGet();
             PortfolioUpdate update = new PortfolioUpdate(
