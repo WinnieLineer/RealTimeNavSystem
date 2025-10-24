@@ -1,0 +1,119 @@
+package com.example.realtimevalsystem.service;
+
+import com.example.realtimevalsystem.model.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+
+/**
+ * 核心估值服務 (已重構)
+ * 1. 監聽市場價格
+ * 2. 執行計算
+ * 3. 將結果 "發布" 給訂閱者
+ */
+public class PortfolioValuationService implements MarketDataListener {
+
+    // 靜態資料
+    private final List<Position> positions;
+    private final Map<String, Security> securityMap;
+    private final OptionPricingService pricingService;
+
+    // 動態資料
+    private final Map<String, Double> currentPrices = new ConcurrentHashMap<>();
+    private final Map<String, Double> currentStockPrices;
+
+    // --- 新增：訂閱者 和 序號 ---
+    private PortfolioResultListener resultListener;
+    private final AtomicLong updateCounter = new AtomicLong(0); // 原子計數器
+
+    public PortfolioValuationService(List<Position> positions,
+                                     Map<String, Security> securityMap,
+                                     Map<String, Double> initialStockPrices,
+                                     OptionPricingService pricingService) {
+        this.positions = positions;
+        this.securityMap = securityMap;
+        this.pricingService = pricingService;
+        this.currentStockPrices = new ConcurrentHashMap<>(initialStockPrices);
+
+        // (初始化價格 Map 的邏輯不變)
+        for (Position p : positions) {
+            String ticker = p.getSymbol();
+            if (currentStockPrices.containsKey(ticker)) {
+                currentPrices.put(ticker, currentStockPrices.get(ticker));
+            } else {
+                currentPrices.put(ticker, 0.0);
+            }
+        }
+    }
+
+    // --- 新增：註冊訂閱者的方法 ---
+    public void setListener(PortfolioResultListener listener) {
+        this.resultListener = listener;
+    }
+
+    @Override
+    public void onStockPriceUpdate(String ticker, double newPrice) {
+        currentStockPrices.put(ticker, newPrice);
+        recalculatePortfolio(ticker, newPrice);
+    }
+
+    /**
+     * 重構：只計算，不印出
+     */
+    private void recalculatePortfolio(String updatedTicker, double updatedPrice) {
+        double totalNAV = 0.0;
+        List<CalculatedPosition> calculatedPositions = new ArrayList<>();
+
+        // --- 1. 更新價格並計算價值 ---
+        for (Position pos : positions) {
+            String ticker = pos.getSymbol();
+            Security sec = securityMap.get(ticker);
+            double newPrice = 0.0;
+            String typeStr = "UNKNOWN"; // <-- 新增
+
+            if (sec instanceof Stock) {
+                typeStr = "STOCK"; // <-- 新增
+                newPrice = currentStockPrices.getOrDefault(ticker, 0.0);
+            } else if (sec instanceof EuropeanCallOption) {
+                typeStr = "CALL"; // <-- 新增
+                EuropeanCallOption call = (EuropeanCallOption) sec;
+                double S = currentStockPrices.get(call.getUnderlyingTicker());
+                newPrice = pricingService.calculateCallPrice(
+                        S, call.getStrikePrice(), call.getSigma(), call.getTimeToMaturity()
+                );
+            } else if (sec instanceof EuropeanPutOption) {
+                typeStr = "PUT"; // <-- 新增
+                EuropeanPutOption put = (EuropeanPutOption) sec;
+                double S = currentStockPrices.get(put.getUnderlyingTicker());
+                newPrice = pricingService.calculatePutPrice(
+                        S, put.getStrikePrice(), put.getSigma(), put.getTimeToMaturity()
+                );
+            }
+
+            currentPrices.put(ticker, newPrice);
+
+            long qty = pos.getPositionSize();
+            double value = newPrice * qty;
+            totalNAV += value;
+
+            // --- [已升級] 傳入 typeStr ---
+            calculatedPositions.add(new CalculatedPosition(ticker, typeStr, newPrice, qty, value));
+        }
+
+        // --- 2. 發布結果給訂閱者 (這部分不變) ---
+        if (resultListener != null) {
+            long currentUpdateNum = updateCounter.incrementAndGet();
+            PortfolioUpdate update = new PortfolioUpdate(
+                    currentUpdateNum,
+                    updatedTicker,
+                    updatedPrice,
+                    calculatedPositions,
+                    totalNAV
+            );
+            resultListener.onPortfolioUpdate(update);
+        }
+    }
+}
